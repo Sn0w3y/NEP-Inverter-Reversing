@@ -14,7 +14,7 @@ binary_data = bytes([
     0x0f, 0x0f, 0x0f, 0x00, 0x00, 0x1c, 0x00, 0xc3,
                         #-------------------------Seriennummer--------------------------#
     0xc3, 0xc3, 0xc3, serial_bytes[0], serial_bytes[1], serial_bytes[2], serial_bytes[3],
-    #------V-AC-----# #---P-AC----#
+         #--V--AC---# #---P-AC------#
     0x00, 0x00, 0x5a, mittleres_byte, 0x9d, 0x16, 0x80, 0x0f, 0x05,
     0x02, 0xa6, 0x31, 0xd0, 0x0a, 0x11, 0x03, 0x05,
     0x8a, 0x63, 0x17, 0xc0, 0x34
@@ -24,7 +24,7 @@ binary_data = bytes([
 ## Key Components
 Serial Number: Identified by the bytes following the 0xc3, 0xc3, 0xc3, 0xc3 sequence. This unique identifier is specific to each inverter.
 
-AC Voltage: Represented by the bytes 0x00, 0x00, 0x5a. This segment indicates the AC voltage, decoded as 230.4V (assuming the value is in millivolts).
+AC Voltage: Represented by the bytes 0x00, 0x5a. This segment indicates the AC voltage, decoded as 230.4V (assuming the value is in millivolts).
 
 AC Power: The mittleres_byte represents the power in watts. The exact conversion factor from the byte value to watts is determined through experimental analysis.
 
