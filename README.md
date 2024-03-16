@@ -21,17 +21,17 @@ binary_data = bytes([
 ])
 ```
 
-Key Components
+## Key Components
 Serial Number: Identified by the bytes following the 0xc3, 0xc3, 0xc3, 0xc3 sequence. This unique identifier is specific to each inverter.
 
 AC Voltage: Represented by the bytes 0x00, 0x00, 0x5a. This segment indicates the AC voltage, decoded as 230.4V (assuming the value is in millivolts).
 
 AC Power: The mittleres_byte represents the power in watts. The exact conversion factor from the byte value to watts is determined through experimental analysis.
 
-Analysis Process
+## Analysis Process
 The reverse engineering process involved analyzing the byte sequences sent in packets from the inverter to the monitoring portal. By changing specific bytes and observing the effects on the displayed data in the portal, we were able to deduce the purpose of various segments within the packet.
 
-Challenges
+## Challenges
 Decoding the entire structure of the binary data requires a comprehensive understanding of the inverter's operational metrics and potentially more sophisticated analysis techniques. Some segments of the data packet remain undeciphered and could represent other operational parameters like DC voltage, current, or system status indicators.
 
 Contribution
