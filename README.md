@@ -22,6 +22,8 @@ binary_data = bytes([
 ```
 
 ## Key Components
+- Note: All of the Bytes are in Little Endianness afaik.
+
 Serial Number: Identified by the bytes following the 0xc3, 0xc3, 0xc3, 0xc3 sequence. This unique identifier is specific to each inverter.
 
 AC Voltage: Represented by the bytes 0x00, 0x5a. This segment indicates the AC voltage, decoded as 230.4V (assuming the value is in millivolts).
