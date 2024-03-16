@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository documents the reverse engineering process of interpreting binary data sent from a NEP inverter to its monitoring portal. The goal is to understand how various operational parameters such as serial number, AC voltage (V-AC), and AC power (P-AC) are encoded in the transmitted binary data.
+This repository documents the reverse engineering process of interpreting binary data sent from a NEP inverter to its monitoring portal. Since NEP does not provide an API to the Inverter, nor it has Modbus, Serial or any other Interface the goal is to understand how various operational parameters such as serial number, AC voltage (V-AC), and AC power (P-AC) are encoded in the transmitted binary data.
 
 ## Binary Data Structure
 
