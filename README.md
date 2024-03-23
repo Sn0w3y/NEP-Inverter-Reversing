@@ -6,16 +6,49 @@ This repository documents the reverse engineering process of interpreting binary
 
 ## Server Overview
 
-The Python server implemented in this project operates on HTTP and listens for GET and POST requests. It serves two primary functions:
+The Python server implemented in this project operates on HTTP and listens for GET and POST requests. It serves the following primary functions:
 
-- **GET `/metrics`**: Responds with the latest wattage readings from all monitored inverters, formatted for easy integration with monitoring solutions.
+- **GET `/metrics`**: Responds with the latest wattage readings from all monitored inverters, formatted for easy integration with monitoring solutions (like [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/grafana/)).
+- **GET `/data.json`**: Responds an json map with the latest wattage readings from all monitored inverters with timestamp, formatted for debugging with.
 - **POST `/i.php`**: Receives binary data packets from inverters, extracts operational parameters, and updates the latest readings for each inverter.
 
 ### Key Features
 
-- **Error Handling**: Responds with a 400 Bad Request error for paths other than `/metrics` and `/i.php`, indicating invalid endpoints.
+- **Error Handling**: Responds with a 400 Bad Request error for paths other than `/metrics`, `/data.json` and `/i.php`, indicating invalid endpoints.
 - **Dynamic Data Handling**: Utilizes a dictionary to store and update wattage readings from different inverters identified by their serial numbers.
 - **Simple Deployment**: Configurable via environment variables `NEP_LISTEN_ADDR` and `NEP_LISTEN_PORT` for flexible deployment.
+
+### MQTT (for Home Assistant)
+- **Simple Deployment**: Configurable via environment variables `NEP_MQTT_ADDR` and `NEP_MQTT_PORT`.
+- **MQTT Topics**: The MQTT send live on every new incoming `/i.php`-request the following values on the following Topics:
+  - **WATT**: `homeassistant/sensor/{serial_number}/watt` the cor
+- **[Home-Assistant](https://www.home-assistant.io/integrations/mqtt) ready**: it send config topics for discovery so no extra configuration is needed:
+  - **watt sensor**: `homeassistant/sensor/{serial_number}/watt/config`
+
+### Setup Server
+
+But your NEP inverters into a wifi, create an fake DNS-Server (which response for A-Record `www.nepviewer.net` with the IP-Adress of your server).
+
+#### Install MQTT
+Install the python-library paho-mqtt (or with `apt install python3-paho-mqtt` on debian).
+
+If you like to use **nats-server** then follow this instructions:
+Download latest [nats-server](https://nats.io/download/)-binary (or us `apt install nats-server` on debian).
+Edit `/etc/nats-server.conf`:
+```
+port: 4222
+server_name: mqtt
+
+jetstream {
+        store_dir: /var/lib/nats
+}
+
+mqtt {
+        port: 1883
+}
+```
+
+And wait with `nats -s nats://127.0.0.1:4222 sub "homeassistant.sensor.*.watt"` till the first value cames in.
 
 ## Binary Data Structure
 
