@@ -4,6 +4,19 @@
 
 This repository documents the reverse engineering process of interpreting binary data sent from a NEP inverter to its monitoring portal. Since NEP does not provide an API to the Inverter, nor it has Modbus, Serial or any other Interface the goal is to understand how various operational parameters such as serial number, AC voltage (V-AC), and AC power (P-AC) are encoded in the transmitted binary data.
 
+## Server Overview
+
+The Python server implemented in this project operates on HTTP and listens for GET and POST requests. It serves two primary functions:
+
+- **GET `/metrics`**: Responds with the latest wattage readings from all monitored inverters, formatted for easy integration with monitoring solutions.
+- **POST `/i.php`**: Receives binary data packets from inverters, extracts operational parameters, and updates the latest readings for each inverter.
+
+### Key Features
+
+- **Error Handling**: Responds with a 400 Bad Request error for paths other than `/metrics` and `/i.php`, indicating invalid endpoints.
+- **Dynamic Data Handling**: Utilizes a dictionary to store and update wattage readings from different inverters identified by their serial numbers.
+- **Simple Deployment**: Configurable via environment variables `NEP_LISTEN_ADDR` and `NEP_LISTEN_PORT` for flexible deployment.
+
 ## Binary Data Structure
 
 The binary data sent to the portal is structured as follows:
@@ -38,3 +51,4 @@ Decoding the entire structure of the binary data requires a comprehensive unders
 
 Contribution
 Contributions to further decode and understand the binary data structure are welcome. If you have insights or have conducted similar reverse engineering efforts, please feel free to contribute to this repository.
+

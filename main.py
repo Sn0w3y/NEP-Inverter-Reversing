@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 import requests
-
+from os import environ
 
 def generate_binary_data(serial_number, watt):
     # Berechnet den Wert für das mittlere Byte basierend auf der gewünschten Leistung
@@ -36,11 +37,13 @@ def send_data(url, serial_number, watt):
 
 
 # Ziel-URL
-url = 'http://www.nepviewer.net/i.php'
+url = environ.get('NEP_VIEWER_SERVER', 'http://www.nepviewer.net')+'/i.php'
 
 # Seriennummer und gewünschte Leistung (Watt) einstellen
 serial_number = 0x30c577e1  # Seriennummer hier einstellen
 watt = 230  # Gewünschte Wattzahl hier einstellen
+
+print(f'Send for: {serial_number:x} watt: {watt}')
 
 response = send_data(url, serial_number, watt)
 
