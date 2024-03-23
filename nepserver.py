@@ -3,8 +3,25 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timezone, timedelta
 from os import environ
 
+lastValues = dict()
 
 class MyServer(BaseHTTPRequestHandler):
+  def do_GET(self):
+    if self.path != "/metrics":
+      self.send_response(400)
+      self.send_header("Content-type", "text/html")
+      self.end_headers()
+      self.wfile.write(bytes("NOT FOUND\n", "utf-8"))
+      return
+    self.send_response(200)
+    self.send_header("Content-type", "text/html")
+    self.end_headers()
+    for serial_number in lastValues:
+        value = lastValues[serial_number]
+        watt = float(value.get("watt"))
+        self.wfile.write(bytes('nepserver_watt{serial_number="'+f"{serial_number}"+'"} '+f"{watt}", "utf-8"))
+        
+    
   def do_POST(self):
     if self.path != "/i.php":
       self.send_response(400)
@@ -16,6 +33,7 @@ class MyServer(BaseHTTPRequestHandler):
     post_body = self.rfile.read(content_len)
     serial_number = int.from_bytes(post_body[19:23], 'little')
     watt = int(round(int.from_bytes(post_body[26:27], 'little')*3.190))
+    lastValues[serial_number] = { "watt": watt }
     print(f"recieve from: {serial_number} watt: {watt}")
 
     self.send_response(200)
