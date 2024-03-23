@@ -19,7 +19,7 @@ class MyServer(BaseHTTPRequestHandler):
     for serial_number in lastValues:
         value = lastValues[serial_number]
         watt = float(value.get("watt"))
-        self.wfile.write(bytes('nepserver_watt{serial_number="'+f"{serial_number}"+'"} '+f"{watt}", "utf-8"))
+        self.wfile.write(bytes('nepserver_watt{serial_number="'+f"{serial_number}"+'"} '+f"{watt}\n", "utf-8"))
         
     
   def do_POST(self):
