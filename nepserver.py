@@ -34,7 +34,7 @@ class MyServer(BaseHTTPRequestHandler):
     serial_number = format(int.from_bytes(post_body[19:23], 'little'), '02x')
     watt = int(round(int.from_bytes(post_body[26:27], 'little')*3.190))
     lastValues[serial_number] = { "watt": watt }
-    print(f"recieve from: {serial_number} watt: {watt}")
+    print(f"Recieve Data from: {serial_number} watt: {watt}")
 
     self.send_response(200)
     self.send_header("Content-type", "text/html")
