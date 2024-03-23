@@ -43,7 +43,7 @@ url = environ.get('NEP_VIEWER_SERVER', 'http://www.nepviewer.net')+'/i.php'
 serial_number = 0x30c577e1  # Seriennummer hier einstellen
 watt = 230  # Gewünschte Wattzahl hier einstellen
 
-print(f'Send for: {serial_number} watt: {watt}')
+print(f'Send for: {serial_number:x} watt: {watt}')
 
 response = send_data(url, serial_number, watt)
 
