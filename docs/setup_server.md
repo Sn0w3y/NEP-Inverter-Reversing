@@ -68,6 +68,11 @@ mqtt {
 And wait with `nats -s nats://127.0.0.1:4222 sub "homeassistant.sensor.*.watt"` till the first value cames in.
 
 
+Jippi, you could also log the payload with:
+```
+nats sub "nepserver.payload" -r | tee /var/log/nepserver-payload.log
+```
+
 ## 4. Setup nepserver.py
 
 1. **Configure**:

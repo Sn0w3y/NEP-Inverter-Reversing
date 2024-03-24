@@ -19,9 +19,10 @@ class SimpleServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"NOT FOUND\n")
 
-    def send_data_per_mqtt(self, dp: Datapoint):
+    def send_data_per_mqtt(self, dp: Datapoint, payload):
         if self.mqttc is None:
             return
+        serial_number_uppercase = dp.serial_number.upper()
         self.mqttc.publish(f"homeassistant/sensor/{dp.serial_number}/watt/config", json.dumps({
             "name": f"Watt",
             "unique_id": f"mi_{dp.serial_number}_watt",
@@ -30,9 +31,15 @@ class SimpleServer(BaseHTTPRequestHandler):
             "device_class": "power",
             "unit_of_measurement": "W",
             "state_class": "measurement",
+            "expire_after": 3600,
             "device": {
-                "identifiers": f"mi_{dp.serial_number}",
-                "name": f"MI-{dp.serial_number}",
+                "identifiers": [
+                    f"mi_{dp.serial_number}",
+                    f"MI-{serial_number_uppercase}",
+                    dp.serial_number
+                ],
+                "name": f"MI-{serial_number_uppercase}",
+                "serial_number": serial_number_uppercase,
                 "manufacturer": "NEP",
                 "model": "BDM-600",
                 "sw_version": "unknown",
@@ -40,6 +47,7 @@ class SimpleServer(BaseHTTPRequestHandler):
             }
         }), True)
         self.mqttc.publish(f"homeassistant/sensor/{dp.serial_number}/watt", dp.watt, True)
+        self.mqttc.publish("nepserver/payload", payload.hex())
         print(f"send mqtt data: {dp}")
     
     def send_prometheus(self):
@@ -60,9 +68,10 @@ class SimpleServer(BaseHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
         def output(obj):
+            if isinstance(obj, bytes):
+                return obj.hex()
             if isinstance(obj, datetime):
-                serial = obj.isoformat()
-                return serial
+                return obj.isoformat()
             return obj.__dict__
         self.wfile.write(json.dumps(last_values, default=output).encode("utf-8"))
 
@@ -82,16 +91,18 @@ class SimpleServer(BaseHTTPRequestHandler):
             return
 
         content_length = int(self.headers.get('Content-Length'))
-        post_body = self.rfile.read(content_length)
-        dp = Datapoint().parse(post_body)
-        self.send_data_per_mqtt(dp)
+        payload = self.rfile.read(content_length)
+        dp = Datapoint().parse(payload)
+        self.send_data_per_mqtt(dp, payload)
         data = {
             "timestamp": datetime.now(),
             "datapoint": dp,
+            "payload": payload,
         }
         # store for prometheus metrics
         last_values[dp.serial_number] = data
-        print(f"Receive Data: {dp}")
+        payload_str = payload.hex()
+        print(f"Receive Data: {dp}, payload={payload_str}")
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
