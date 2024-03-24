@@ -21,13 +21,13 @@ The Python server implemented in this project operates on HTTP and listens for G
 ### MQTT (for Home Assistant)
 - **Simple Deployment**: Configurable via environment variables `NEP_MQTT_ADDR` and `NEP_MQTT_PORT`.
 - **MQTT Topics**: The MQTT send live on every new incoming `/i.php`-request the following values on the following Topics:
-  - **WATT**: `homeassistant/sensor/{serial_number}/watt` the cor
+  - **WATT**: `homeassistant/sensor/{serial_number}/watt` the core
 - **[Home-Assistant](https://www.home-assistant.io/integrations/mqtt) ready**: it send config topics for discovery so no extra configuration is needed:
   - **watt sensor**: `homeassistant/sensor/{serial_number}/watt/config`
 
 ### Setup Server
 
-But your NEP inverters into a wifi, create an fake DNS-Server (which response for A-Record `www.nepviewer.net` with the IP-Adress of your server).
+Put your NEP inverters into your Home WiFi, create an fake DNS-Server (which response for A-Record `www.nepviewer.net` with the IP-Adress of your server).
 
 #### Install MQTT
 Install the python-library paho-mqtt (or with `apt install python3-paho-mqtt` on debian).
