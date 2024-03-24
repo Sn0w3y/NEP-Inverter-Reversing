@@ -14,23 +14,25 @@ class Datapoint(object):
 
   def to_bytearray(self):
     # Berechnet den Wert für das mittlere Byte basierend auf der gewünschten Leistung
-    mittleres_byte = int(self.watt / Datapoint()._watt_const)
+    power = int(self.watt / Datapoint()._watt_const)
 
     # Konvertiert die Seriennummer in eine Byte-Sequenz
-    serial_bytes = int(self.serial_number, 16).to_bytes(4, 'little')
+    sn = int(self.serial_number, 16).to_bytes(4, 'little')
 
     # Erstellt die binären Daten mit dem berechneten mittleren Byte und der Seriennummer
     return bytes([
-        0x79, 0x26, 0x00, 0x40, 0x14, 0x00, 0x00, 0x0f,
-        0x0f, 0x0f, 0x0f, 0x00, 0x00, 0x1c, 0x00, 0xc3,
-
-                         #-------------------------Seriennummer--------------------------#
-        0xc3, 0xc3, 0xc3, serial_bytes[0], serial_bytes[1], serial_bytes[2], serial_bytes[3],
-
-        #----V-AC---#,    #---P-AC----#
-        0x00, 0x00, 0x5a, mittleres_byte, 0x9d, 0x16, 0x80, 0x0f, 0x05,
-        0x02, 0xa6, 0x31, 0xd0, 0x0a, 0x11, 0x03, 0x05,
-        0x8a, 0x63, 0x17, 0xc0, 0x34
+     #------#------#------#------#------#------#------#------#
+        0x79,  0x26,  0x00,  0x40,  0x14,  0x00,  0x00,  0x0f, # 8
+     #------#------#------#------#------#------#------#------#
+        0x0f,  0x0f,  0x0f,  0x00,  0x00,  0x1c,  0x00,  0xc3, # 8
+     #------#------#------#-------SERIAL-NUMBER-------#------#
+        0xc3,  0xc3,  0xc3, sn[0], sn[1], sn[2], sn[3],  0x00, # 8
+     #------#-V-AC-#-P-AC-#------#------#------#------#------#
+        0x00,  0x5a, power,  0x9d,  0x16,  0x80,  0x0f,  0x05, # 8
+     #------#------#------#------#------#------#------#------#
+        0x02,  0xa6,  0x31,  0xd0,  0x0a,  0x11,  0x03,  0x05, # 8
+     #------#------#------#------#------#
+        0x8a,  0x63,  0x17,  0xc0,  0x34  # 5
     ])
 
 
