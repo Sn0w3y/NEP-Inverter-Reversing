@@ -14,7 +14,7 @@ last_values = {}
 
 # Environment Variables for DNS Configuration
 INTERCEPT_DOMAIN = 'www.nepviewer.net.'
-RESPONSE_IP = environ.get('RESPONSE_IP', '127.0.0.1')  # IP to respond with for intercepted domain
+RESPONSE_IP = environ.get('RESPONSE_IP', '0.0.0.0')  # IP to respond with for intercepted domain
 FORWARD_DNS = environ.get('FORWARD_DNS', '8.8.8.8')    # DNS server to forward non-intercepted queries
 
 class DNSRequestHandler(socketserver.BaseRequestHandler):
