@@ -22,6 +22,7 @@ class SimpleServer(BaseHTTPRequestHandler):
     def send_data_per_mqtt(self, dp: Datapoint, payload):
         if self.mqttc is None:
             return
+        serial_number_uppercase = dp.serial_number.upper()
         self.mqttc.publish(f"homeassistant/sensor/{dp.serial_number}/watt/config", json.dumps({
             "name": f"Watt",
             "unique_id": f"mi_{dp.serial_number}_watt",
@@ -30,9 +31,15 @@ class SimpleServer(BaseHTTPRequestHandler):
             "device_class": "power",
             "unit_of_measurement": "W",
             "state_class": "measurement",
+            "expire_after": 3600,
             "device": {
-                "identifiers": f"mi_{dp.serial_number}",
-                "name": f"MI-{dp.serial_number}",
+                "identifiers": [
+                    f"mi_{dp.serial_number}",
+                    f"MI-{serial_number_uppercase}",
+                    dp.serial_number
+                ],
+                "name": f"MI-{serial_number_uppercase}",
+                "serial_number": serial_number_uppercase,
                 "manufacturer": "NEP",
                 "model": "BDM-600",
                 "sw_version": "unknown",
