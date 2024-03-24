@@ -25,31 +25,6 @@ The Python server implemented in this project operates on HTTP and listens for G
 - **[Home-Assistant](https://www.home-assistant.io/integrations/mqtt) ready**: it send config topics for discovery so no extra configuration is needed:
   - **watt sensor**: `homeassistant/sensor/{serial_number}/watt/config`
 
-### Setup Server
-
-Put your NEP inverters into your Home WiFi, create an fake DNS-Server (which response for A-Record `www.nepviewer.net` with the IP-Adress of your server).
-
-#### Install MQTT
-Install the python-library paho-mqtt (or with `apt install python3-paho-mqtt` on debian).
-
-If you like to use **nats-server** then follow this instructions:
-Download latest [nats-server](https://nats.io/download/)-binary (or us `apt install nats-server` on debian).
-Edit `/etc/nats-server.conf`:
-```
-port: 4222
-server_name: mqtt
-
-jetstream {
-        store_dir: /var/lib/nats
-}
-
-mqtt {
-        port: 1883
-}
-```
-
-And wait with `nats -s nats://127.0.0.1:4222 sub "homeassistant.sensor.*.watt"` till the first value cames in.
-
 ## Binary Data Structure
 
 The binary data sent to the portal is structured as follows:
@@ -86,6 +61,6 @@ The reverse engineering process involved analyzing the byte sequences sent in pa
 ## Challenges
 Decoding the entire structure of the binary data requires a comprehensive understanding of the inverter's operational metrics and potentially more sophisticated analysis techniques. Some segments of the data packet remain undeciphered and could represent other operational parameters like DC voltage, current, or system status indicators.
 
-Contribution
+## Contribution
 Contributions to further decode and understand the binary data structure are welcome. If you have insights or have conducted similar reverse engineering efforts, please feel free to contribute to this repository.
 
