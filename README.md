@@ -21,7 +21,8 @@ The Python server implemented in this project operates on HTTP and listens for G
 ### MQTT (for Home Assistant)
 - **Simple Deployment**: Configurable via environment variables `NEP_MQTT_ADDR` and `NEP_MQTT_PORT`.
 - **MQTT Topics**: The MQTT send live on every new incoming `/i.php`-request the following values on the following Topics:
-  - **WATT**: `homeassistant/sensor/{serial_number}/watt` the core
+  - **Payload**: original payload under `nepserver/payload` 
+  - **WATT**: under `homeassistant/sensor/{serial_number}/watt`
 - **[Home-Assistant](https://www.home-assistant.io/integrations/mqtt) ready**: it send config topics for discovery so no extra configuration is needed:
   - **watt sensor**: `homeassistant/sensor/{serial_number}/watt/config`
 
