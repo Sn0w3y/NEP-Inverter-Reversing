@@ -20,7 +20,10 @@ This guide outlines the process for setting up a fake DNS server on a Raspberry 
    Create a new configuration file with:
    `sudo nano /etc/dnsmasq.conf`
    Add the following lines, replacing `raspberry_pi_ip` with your Raspberry Pi’s IP address and `server_ip` with your server's IP address:
-   `listen-address=127.0.0.1,raspberry_pi_ip
+   ```
+   listen-address=127.0.0.1,raspberry_pi_ip
+   address=/www.nepviewer.net/server_ip
+   ```
    address=/www.nepviewer.net/server_ip
    `
 
