@@ -1,12 +1,42 @@
 #!/usr/bin/env python3
+import json
+import socketserver
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timezone, timedelta
 from models import Datapoint
+from dnslib import DNSRecord, DNSHeader, RR, QTYPE, A
 from os import environ
-import json
+import threading
+import socket
 
 # A dictionary to hold the last values received from POST requests.
 last_values = {}
+
+# Environment Variables for DNS Configuration
+INTERCEPT_DOMAIN = 'www.nepviewer.net.'
+RESPONSE_IP = environ.get('RESPONSE_IP', '127.0.0.1')  # IP to respond with for intercepted domain
+FORWARD_DNS = environ.get('FORWARD_DNS', '8.8.8.8')    # DNS server to forward non-intercepted queries
+
+class DNSRequestHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        data, socket = self.request
+        request = DNSRecord.parse(data)
+
+        reply = DNSRecord(DNSHeader(id=request.header.id, qr=1, aa=1, ra=1), q=request.q)
+
+        if str(request.q.qname) == INTERCEPT_DOMAIN:
+            # Intercept specific domain and respond with specified IP
+            reply.add_answer(RR(request.q.qname, QTYPE.A, rdata=A(RESPONSE_IP), ttl=60))
+        else:
+            # Forward other DNS queries to a real DNS server
+            try:
+                forward_reply = DNSRecord.parse(DNSRecord.question(request.q.qname).send(FORWARD_DNS, timeout=1))
+                for rr in forward_reply.rr:
+                    reply.add_answer(rr)
+            except Exception as e:
+                print(f"Failed to forward DNS query: {e}")
+
+        socket.sendto(reply.pack(), self.client_address)
 
 class SimpleServer(BaseHTTPRequestHandler):
     def __init__(self, mqttc, *args):
@@ -141,5 +171,15 @@ def run_server():
             mqttc.loop_stop()
         print("Server stopped.")
 
+def run_dns_server():
+    with socketserver.ThreadingUDPServer(('0.0.0.0', 53), DNSRequestHandler) as server:
+        print("Starting DNS server...")
+        server.serve_forever()
+
 if __name__ == "__main__":
+
+    # Start DNS server in a separate thread
+    dns_thread = threading.Thread(target=run_dns_server, daemon=True)
+    dns_thread.start()
+
     run_server()
