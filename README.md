@@ -6,16 +6,24 @@ This repository documents the reverse engineering process of interpreting binary
 
 ## Server Overview
 
-The Python server implemented in this project operates on HTTP and listens for GET and POST requests. It serves two primary functions:
+The Python server implemented in this project operates on HTTP and listens for GET and POST requests. It serves the following primary functions:
 
-- **GET `/metrics`**: Responds with the latest wattage readings from all monitored inverters, formatted for easy integration with monitoring solutions.
+- **GET `/metrics`**: Responds with the latest wattage readings from all monitored inverters, formatted for easy integration with monitoring solutions (like [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/grafana/)).
+- **GET `/data.json`**: Responds an json map with the latest wattage readings from all monitored inverters with timestamp, formatted for debugging with.
 - **POST `/i.php`**: Receives binary data packets from inverters, extracts operational parameters, and updates the latest readings for each inverter.
 
 ### Key Features
 
-- **Error Handling**: Responds with a 400 Bad Request error for paths other than `/metrics` and `/i.php`, indicating invalid endpoints.
+- **Error Handling**: Responds with a 400 Bad Request error for paths other than `/metrics`, `/data.json` and `/i.php`, indicating invalid endpoints.
 - **Dynamic Data Handling**: Utilizes a dictionary to store and update wattage readings from different inverters identified by their serial numbers.
 - **Simple Deployment**: Configurable via environment variables `NEP_LISTEN_ADDR` and `NEP_LISTEN_PORT` for flexible deployment.
+
+### MQTT (for Home Assistant)
+- **Simple Deployment**: Configurable via environment variables `NEP_MQTT_ADDR` and `NEP_MQTT_PORT`.
+- **MQTT Topics**: The MQTT send live on every new incoming `/i.php`-request the following values on the following Topics:
+  - **WATT**: `homeassistant/sensor/{serial_number}/watt` the core
+- **[Home-Assistant](https://www.home-assistant.io/integrations/mqtt) ready**: it send config topics for discovery so no extra configuration is needed:
+  - **watt sensor**: `homeassistant/sensor/{serial_number}/watt/config`
 
 ## Binary Data Structure
 
@@ -23,14 +31,18 @@ The binary data sent to the portal is structured as follows:
 
 ```python
 binary_data = bytes([
-    0x79, 0x26, 0x00, 0x40, 0x14, 0x00, 0x00, 0x0f,
-    0x0f, 0x0f, 0x0f, 0x00, 0x00, 0x1c, 0x00, 0xc3,
-                        #-------------------------Seriennummer--------------------------#
-    0xc3, 0xc3, 0xc3, serial_bytes[0], serial_bytes[1], serial_bytes[2], serial_bytes[3],
-         #--V--AC---# #---P-AC------#
-    0x00, 0x00, 0x5a, mittleres_byte, 0x9d, 0x16, 0x80, 0x0f, 0x05,
-    0x02, 0xa6, 0x31, 0xd0, 0x0a, 0x11, 0x03, 0x05,
-    0x8a, 0x63, 0x17, 0xc0, 0x34
+  #------#------#------#------#------#------#------#------#
+     0x79,  0x26,  0x00,  0x40,  0x14,  0x00,  0x00,  0x0f, # 8
+  #------#------#------#------#------#------#------#------#
+     0x0f,  0x0f,  0x0f,  0x00,  0x00,  0x1c,  0x00,  0xc3, # 8
+  #------#------#------#-------SERIAL-NUMBER-------#------#
+     0xc3,  0xc3,  0xc3, sn[0], sn[1], sn[2], sn[3],  0x00, # 8
+  #------#-V-AC-#-P-AC-#------#------#------#------#------#
+     0x00,  0x5a, power,  0x9d,  0x16,  0x80,  0x0f,  0x05, # 8
+  #------#------#------#------#------#------#------#------#
+     0x02,  0xa6,  0x31,  0xd0,  0x0a,  0x11,  0x03,  0x05, # 8
+  #------#------#------#------#------#
+     0x8a,  0x63,  0x17,  0xc0,  0x34  # 5
 ])
 ```
 
@@ -49,6 +61,6 @@ The reverse engineering process involved analyzing the byte sequences sent in pa
 ## Challenges
 Decoding the entire structure of the binary data requires a comprehensive understanding of the inverter's operational metrics and potentially more sophisticated analysis techniques. Some segments of the data packet remain undeciphered and could represent other operational parameters like DC voltage, current, or system status indicators.
 
-Contribution
+## Contribution
 Contributions to further decode and understand the binary data structure are welcome. If you have insights or have conducted similar reverse engineering efforts, please feel free to contribute to this repository.
 
