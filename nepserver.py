@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timezone, timedelta
+from models import Datapoint
 from os import environ
 import json
 
@@ -18,28 +19,28 @@ class SimpleServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"NOT FOUND\n")
 
-    def send_data_per_mqtt(self, serial_number, data):
+    def send_data_per_mqtt(self, dp: Datapoint):
         if self.mqttc is None:
             return
-        self.mqttc.publish(f"homeassistant/sensor/{serial_number}/watt/config", json.dumps({
+        self.mqttc.publish(f"homeassistant/sensor/{dp.serial_number}/watt/config", json.dumps({
             "name": f"Watt",
-            "unique_id": f"mi_{serial_number}_watt",
-            "state_topic": f"homeassistant/sensor/{serial_number}/watt",
+            "unique_id": f"mi_{dp.serial_number}_watt",
+            "state_topic": f"homeassistant/sensor/{dp.serial_number}/watt",
             "icon": "mdi:solar-power-variant",
             "device_class": "energy",
             "unit_of_measurement": "W",
             "state_class": "measurement",
             "device": {
-                "identifiers": f"mi_{serial_number}",
-                "name": f"MI-{serial_number}",
+                "identifiers": f"mi_{dp.serial_number}",
+                "name": f"MI-{dp.serial_number}",
                 "manufacturer": "NEP",
                 "model": "BDM-600",
                 "sw_version": "unknown",
                 "hw_version": "unknown"
             }
         }), True)
-        self.mqttc.publish(f"homeassistant/sensor/{serial_number}/watt", data.get("watt"), True)
-        print(f"send mqtt data for {serial_number}")
+        self.mqttc.publish(f"homeassistant/sensor/{dp.serial_number}/watt", dp.watt, True)
+        print(f"send mqtt data: {dp}")
     
     def send_prometheus(self):
         self.send_response(200)
@@ -48,16 +49,22 @@ class SimpleServer(BaseHTTPRequestHandler):
         self.wfile.write('# HELP nepserver_watt A metric which expose the watt \n'.encode("utf-8"))
         self.wfile.write('# UNIT nepserver_watt watt\n'.encode("utf-8"))
         self.wfile.write('# TYPE nepserver_watt gauge\n'.encode("utf-8"))
-        for serial_number, value in last_values.items():
-            watt = float(value.get("watt"))
-            self.wfile.write(f'nepserver_watt{{serial_number="{serial_number}"}} {watt}\n'.encode("utf-8"))
+        for value in last_values.values():
+            dp = value.get("datapoint")
+            watt = float(dp.watt)
+            self.wfile.write(f'nepserver_watt{{serial_number="{dp.serial_number}"}} {watt}\n'.encode("utf-8"))
         self.wfile.write('# EOF\n'.encode("utf-8"))
 
     def send_json(self):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        self.wfile.write(json.dumps(last_values).encode("utf-8"))
+        def output(obj):
+            if isinstance(obj, datetime):
+                serial = obj.isoformat()
+                return serial
+            return obj.__dict__
+        self.wfile.write(json.dumps(last_values, default=output).encode("utf-8"))
 
     def do_GET(self):
         if self.path == "/metrics":
@@ -76,16 +83,15 @@ class SimpleServer(BaseHTTPRequestHandler):
 
         content_length = int(self.headers.get('Content-Length'))
         post_body = self.rfile.read(content_length)
-        serial_number = format(int.from_bytes(post_body[19:23], 'little'), '02x')
-        watt = int(round(int.from_bytes(post_body[26:27], 'little') * 3.190))
+        dp = Datapoint().parse(post_body)
+        self.send_data_per_mqtt(dp)
         data = {
-            "watt": watt,
-            "timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
+            "timestamp": datetime.now(),
+            "datapoint": dp,
         }
-        self.send_data_per_mqtt(serial_number, data)
         # store for prometheus metrics
-        last_values[serial_number] = data
-        print(f"Receive Data from: {serial_number} watt: {watt}")
+        last_values[dp.serial_number] = data
+        print(f"Receive Data: {dp}")
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
