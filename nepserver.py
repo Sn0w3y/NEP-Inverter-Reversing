@@ -27,7 +27,7 @@ class SimpleServer(BaseHTTPRequestHandler):
             "unique_id": f"mi_{dp.serial_number}_watt",
             "state_topic": f"homeassistant/sensor/{dp.serial_number}/watt",
             "icon": "mdi:solar-power-variant",
-            "device_class": "energy",
+            "device_class": "power",
             "unit_of_measurement": "W",
             "state_class": "measurement",
             "device": {
