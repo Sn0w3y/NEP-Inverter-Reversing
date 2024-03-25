@@ -15,10 +15,14 @@ last_values = {}
 # Environment Variables for DNS Configuration
 INTERCEPT_DOMAIN = 'www.nepviewer.net.'
 RESPONSE_IP = environ.get('RESPONSE_IP', '0.0.0.0')  # IP to respond with for intercepted domain
-FORWARD_DNS = environ.get('FORWARD_DNS', '8.8.8.8')    # DNS server to forward non-intercepted queries
+FORWARD_DNS = environ.get('FORWARD_DNS', '8.8.8.8')  # DNS server to forward non-intercepted queries
+DNS_LISTEN_ADDR = environ.get("NEP_LISTEN_ADDR", "0.0.0.0")  # IP for DNS server to listen on
+DISABLE_DNS = environ.get('DISABLE_DNS', 'False').lower() in ['true', '1', 't']
 
 class DNSRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
+        if DISABLE_DNS:
+            return
         data, socket = self.request
         request = DNSRecord.parse(data)
 
@@ -27,7 +31,7 @@ class DNSRequestHandler(socketserver.BaseRequestHandler):
         if str(request.q.qname) == INTERCEPT_DOMAIN:
             # Intercept specific domain and respond with specified IP
             reply.add_answer(RR(request.q.qname, QTYPE.A, rdata=A(RESPONSE_IP), ttl=60))
-        else:
+        elif FORWARD_DNS not in ["", "false", "False"]:
             # Forward other DNS queries to a real DNS server
             try:
                 forward_reply = DNSRecord.parse(DNSRecord.question(request.q.qname).send(FORWARD_DNS, timeout=1))
@@ -172,14 +176,16 @@ def run_server():
         print("Server stopped.")
 
 def run_dns_server():
-    with socketserver.ThreadingUDPServer(('0.0.0.0', 53), DNSRequestHandler) as server:
-        print("Starting DNS server...")
+    if DISABLE_DNS:
+        print("DNS server is disabled.")
+        return
+    with socketserver.ThreadingUDPServer((DNS_LISTEN_ADDR, 53), DNSRequestHandler) as server:
+        print(f"Starting DNS server on {DNS_LISTEN_ADDR}...")
         server.serve_forever()
 
 if __name__ == "__main__":
-
-    # Start DNS server in a separate thread
-    dns_thread = threading.Thread(target=run_dns_server, daemon=True)
-    dns_thread.start()
-
+    # Start DNS server in a separate thread if not disabled
+    if not DISABLE_DNS:
+        dns_thread = threading.Thread(target=run_dns_server, daemon=True)
+        dns_thread.start()
     run_server()
