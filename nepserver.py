@@ -21,15 +21,15 @@ MQTT_PORT = int(environ.get("NEP_MQTT_PORT", "1883"))
 
 # Environment Variables for MQTT Home Assistant discovery
 MQTT_HA_EXPIRE = int(environ.get("NEP_MQTT_HA_EXPIRE", "3600"))
-MQTT_HA_MANUFACTURER = environ.get("NEP_▍MQTT_HA_MANUFACTURER", "NEP")
+MQTT_HA_MANUFACTURER = environ.get("NEP_MQTT_HA_MANUFACTURER", "NEP")
 MQTT_HA_MODEL = environ.get("NEP_MQTT_HA_MODEL", "BDM-800")
 
 # Environment Variables for DNS Configuration
+DISABLE_DNS = environ.get('NEP_DNS_DISABLE', 'False').lower() in ['true', '1', 't', 'yes']
+DNS_LISTEN_ADDR = environ.get("NEP_DNS_LISTEN_ADDR", "0.0.0.0")  # IP for DNS server to listen on
 INTERCEPT_DOMAIN = 'www.nepviewer.net.'
-RESPONSE_IP = environ.get('RESPONSE_IP', '0.0.0.0')  # IP to respond with for intercepted domain
-FORWARD_DNS = environ.get('FORWARD_DNS', '8.8.8.8')  # DNS server to forward non-intercepted queries
-DNS_LISTEN_ADDR = environ.get("NEP_LISTEN_ADDR", "0.0.0.0")  # IP for DNS server to listen on
-DISABLE_DNS = environ.get('DISABLE_DNS', 'False').lower() in ['true', '1', 't', 'yes']
+RESPONSE_IP = environ.get('NEP_DNS_RESPONSE_IP', '0.0.0.0')  # IP to respond with for intercepted domain
+FORWARD_DNS = environ.get('NEP_DNS_FORWARD', '8.8.8.8')  # DNS server to forward non-intercepted queries
 
 class DNSRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
@@ -179,9 +179,9 @@ def run_server():
             mqttc = mqtt.Client()
             mqttc.connect(MQTT_ADDR, MQTT_PORT, 60)
             mqttc.loop_start()
-            print("connect to mqtt server")
+            print(f"Connecting to MQTT server {MQTT_ADDR}:{MQTT_PORT}")
         except:
-            print("No mqtt support")
+            print("No MQTT support")
 
     # bootstrap handler with extra arguments (e.g. mqtt)
     def handler(*args):
