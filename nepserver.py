@@ -21,8 +21,6 @@ DISABLE_DNS = environ.get('DISABLE_DNS', 'False').lower() in ['true', '1', 't']
 
 class DNSRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        if DISABLE_DNS:
-            return
         data, socket = self.request
         request = DNSRecord.parse(data)
 
