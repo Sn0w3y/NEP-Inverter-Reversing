@@ -5,12 +5,18 @@ import time
 import os
 import re
 
-
 class Datapoint:
     def __init__(self, serial_number="none"):
         self._serial_number = serial_number
         self._watt = 0
 
+    @property
+    def serial_number(self):
+        return self._serial_number
+
+    @serial_number.setter
+    def serial_number(self, value):
+        self._serial_number = value
     def to_bytearray(self, byte1, byte2):
         sn = int(self.serial_number, 16).to_bytes(4, 'little')
         return bytes([
@@ -22,74 +28,51 @@ class Datapoint:
             0x8a, 0x63, 0x17, 0xc0, 0x34
         ])
 
-    @property
-    def serial_number(self):
-        return self._serial_number
-
-    @serial_number.setter
-    def serial_number(self, value):
-        self._serial_number = value
-
-    @property
-    def watt(self):
-        return self._watt
-
-    @watt.setter
-    def watt(self, value):
-        self._watt = value
-
-
 def scrape_wattage(url):
     response = requests.get(url)
     page_content = response.text
 
     pattern = r'var now = Math\.round\((\d+)\);'
     match = re.search(pattern, page_content)
-
     if match:
-        wattage_value = match.group(1)
-        return wattage_value
+        return match.group(1)
     else:
         print('Wattage value not found')
         return None
 
-
 def send_data(url, binary_data):
     headers = {'Content-Type': 'application/octet-stream'}
     response = requests.post(url, data=binary_data, headers=headers)
-    print("sending data...")
-    print(response.status_code)
-    print(response.text)
     return response
-
 
 def main():
     base_url = os.environ.get('NEP_VIEWER_SERVER', 'http://www.nepviewer.net')
     send_url = urljoin(base_url, 'i.php')
 
-    # Define serial numbers and corresponding scrape URLs
     devices = {
         "30c577e5": 'https://user.nepviewer.com/pv_monitor/home/index/DE_20240326_4ut4/XXXXXXXXXXXXX',
         "30c577e6": 'https://user.nepviewer.com/pv_monitor/home/index/DE_20240326_Qoqw/XXXXXXXXXXXXX'
     }
 
     while True:
-        for serial_number, scrape_url in devices.items():
-            byte1 = random.randint(0, 255)
-            byte2 = random.randint(0, 255)
-            dp = Datapoint(serial_number)
+        # Generate unique bytes for each serial number
+        unique_bytes = {serial: (random.randint(0, 255), random.randint(0, 255)) for serial in devices.keys()}
 
+        for serial_number, scrape_url in devices.items():
+            dp = Datapoint(serial_number)
+            byte1, byte2 = unique_bytes[serial_number]
+
+            # Send data 10 times
             for _ in range(10):
                 binary_data = dp.to_bytearray(byte1, byte2)
                 send_data(send_url, binary_data)
 
-            time.sleep(1)
+            time.sleep(1)  # Adjust timing as needed
 
+            # Scrape wattage once after sending 10 times
             wattage = scrape_wattage(scrape_url)
-
-            if wattage is not None:
+            if wattage:
                 with open('log.txt', 'a') as log_file:
-                    print(f"Written datapoints to log file for {serial_number}")
                     log_file.write(f'Byte1: {byte1}, Byte2: {byte2}, Wattage: {wattage}\n')
 
 if __name__ == "__main__":
